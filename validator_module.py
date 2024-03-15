@@ -356,7 +356,7 @@ def hpdbCheck(file):
                 break  # No need to continue checking other cells in the column if one is already red
 
     # Create a DataFrame with column names from column_names
-    hdpb_df = pd.DataFrame(columns=hpdb_col)
+    hpdb_summary_df = pd.DataFrame(columns=hpdb_col)
 
     # Create a new row
     new_hpdb_row = {}
@@ -367,11 +367,11 @@ def hpdbCheck(file):
             new_hpdb_row[col_name] = "OK"
 
     # Append the new row to the DataFrame
-    hdpb_df = hdpb_df._append(new_hpdb_row, ignore_index=True)
+    hpdb_summary_df = hpdb_summary_df._append(new_hpdb_row, ignore_index=True)
 
     # Remove the raw file
     os.remove(raw_file_path)
 
     print("Done")
 
-    return hpdb_df
+    return pd.DataFrame(hpdb_summary_df)
