@@ -25,16 +25,16 @@ def hpdbCheck(file):
     print("Processing = " + file)
 
     # Load the "kodepos.xlsx" Excel file into a pandas DataFrame
-    kodepos_df = pd.read_excel('kodepos.xlsx')
+    kodepos_df = pd.read_excel('Reference/ZIP_Code.xlsx')
 
     # Load the "Mobile_Region_Cluster.xlsx" Excel file into a pandas DataFrame
-    mobile_df = pd.read_excel('Mobile_Region_Cluster.xlsx')
+    mobile_df = pd.read_excel('Reference/Mobile_Region_Cluster.xlsx')
 
     # Load the file into a pandas DataFrame
     hpdb_df = pd.read_excel(raw_file_path, sheet_name='HPDB_Excel')
 
     # Load City_Code.xlsx into a DataFrame
-    city_code_df = pd.read_excel('City_Code.xlsx')
+    city_code_df = pd.read_excel('Reference/City_Code.xlsx')
 
     #----------------------
     # City Code Lookup
