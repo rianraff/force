@@ -9,20 +9,6 @@ FORCE (Fiber Optic Readiness Check Engine) is a Python-based tool designed to au
 - **Error Reporting**: FORCE generates detailed summary reports highlighting any errors or issues found in the input data, making it easier for users to identify and rectify them.
 - **Scalability**: The tool is designed to handle large volumes of data efficiently, making it suitable for use in large-scale fiber optic network deployments.
 
-## Installation
-FORCE can be installed using pip:
-
-```
-pip install force
-```
-
-## Usage
-To use FORCE, simply run the main script `force.py` and provide the path to the input data files as arguments. For example:
-
-```
-python force.py --input_dir=Input --output_dir=Output
-```
-
 ## Dependencies
 FORCE relies on the following Python libraries:
 - pandas
