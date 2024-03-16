@@ -10,16 +10,13 @@ import os
 import shutil
 
 # Define the directory paths
-input_dir = 'Input'
 output_dir = 'Output'
 
-# List all files in the raw directory
-files = os.listdir(input_dir)
-
 # Process each file
-def hpdbCheck(file):
+def hpdbCheck(raw_file_path):
+    file = os.path.basename(raw_file_path)
+
     # Construct the full file paths
-    raw_file_path = os.path.join(input_dir, file)
     output_file_path = os.path.join(output_dir, f"output_{file}")
 
     print("Processing = " + file)
@@ -30,8 +27,10 @@ def hpdbCheck(file):
     # Load the "Mobile_Region_Cluster.xlsx" Excel file into a pandas DataFrame
     mobile_df = pd.read_excel('Reference/Mobile_Region_Cluster.xlsx')
 
+    print(raw_file_path)
+
     # Load the file into a pandas DataFrame
-    hpdb_df = pd.read_excel(raw_file_path, sheet_name='HPDB_Excel')
+    hpdb_df = pd.read_excel(raw_file_path)
 
     # Load City_Code.xlsx into a DataFrame
     city_code_df = pd.read_excel('Reference/City_Code.xlsx')
@@ -370,7 +369,7 @@ def hpdbCheck(file):
     hpdb_summary_df = hpdb_summary_df._append(new_hpdb_row, ignore_index=True)
 
     # Remove the raw file
-    os.remove(raw_file_path)
+    # os.remove(raw_file_path)
 
     print("Done")
 
