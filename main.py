@@ -5,13 +5,16 @@ import random
 import pandas as pd
 from validator_module import hpdbCheck
 from kmz_module import kmzCheck
+import threading
+import time
+import concurrent.futures
 
 def main():
     log_columns = ['Cluster ID', 'Checking date', 'Checking Time']
 
     print("FORCE is Running...")
 
-    clusters = ['SIT-00016', 'SIT-00017', 'SIT-00018']
+    clusters = os.listdir('Input')
 
     for cluster in clusters:
         input_dir = f"Input\{cluster}"
@@ -25,8 +28,24 @@ def main():
 
         print(hpdb_file_path)
 
-        hdpb_df = hpdbCheck(hpdb_file_path)
-        kmz_df = kmzCheck(kmz_file_path)
+        start_time = time.time()
+
+        # hdpb_df = hpdbCheck(hpdb_file_path)
+        # kmz_df = kmzCheck(kmz_file_path)
+
+        # Jalankan kedua fungsi secara paralel
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future1 = executor.submit(hpdbCheck, hpdb_file_path)
+            future2 = executor.submit(kmzCheck, kmz_file_path)
+
+            # Ambil hasil kembali dari kedua fungsi
+            hdpb_df = future1.result()
+            kmz_df = future2.result()
+
+        end_time = time.time()
+
+        execution_time = end_time - start_time
+        print("Execution time:", execution_time, "seconds")
 
         # Get current date
         checking_date = datetime.today().strftime('%Y-%m-%d')

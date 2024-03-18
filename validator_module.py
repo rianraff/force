@@ -9,12 +9,12 @@ from datetime import datetime
 import os
 import shutil
 
-# Define the directory paths
-output_dir = 'Output'
-
 # Process each file
 def hpdbCheck(raw_file_path):
     file = os.path.basename(raw_file_path)
+
+    # Define the directory paths
+    output_dir = 'Output'
 
     # Construct the full file paths
     output_file_path = os.path.join(output_dir, f"output_{file}")
