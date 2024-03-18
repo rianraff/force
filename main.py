@@ -732,7 +732,9 @@ def main():
 
     print("FORCE is Running...")
 
-    clusters = os.listdir('Input')
+    entries = os.listdir('Input')
+    # Filter out only directories
+    clusters = [entry for entry in entries if os.path.isdir(os.path.join('Input', entry))]
 
     for cluster in clusters:
         input_dir = f"Input\{cluster}"
