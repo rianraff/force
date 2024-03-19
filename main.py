@@ -1,3 +1,4 @@
+#@title run this
 from datetime import datetime
 import os
 import pandas as pd
@@ -16,7 +17,7 @@ def hpdbCheck(raw_file_path):
     file = os.path.basename(raw_file_path)
 
     # Define the directory paths
-    output_dir = 'Output'
+    output_dir = '/content/force/Output'
 
     # Construct the full file paths
     output_file_path = os.path.join(output_dir, f"output_{file}")
@@ -24,18 +25,18 @@ def hpdbCheck(raw_file_path):
     print("Processing = " + file)
 
     # Load the "kodepos.xlsx" Excel file into a pandas DataFrame
-    kodepos_df = pd.read_excel('Reference/ZIP_Code.xlsx')
+    kodepos_df = pd.read_excel('/content/force/Reference/ZIP_Code.xlsx')
 
     # Load the "Mobile_Region_Cluster.xlsx" Excel file into a pandas DataFrame
-    mobile_df = pd.read_excel('Reference/Mobile_Region_Cluster.xlsx')
+    mobile_df = pd.read_excel('/content/force/Reference/Mobile_Region_Cluster.xlsx')
 
     print(raw_file_path)
 
     # Load the file into a pandas DataFrame
-    hpdb_df = pd.read_excel(raw_file_path)
+    hpdb_df = pd.read_excel(raw_file_path, sheet_name='HPDB_Excel')
 
     # Load City_Code.xlsx into a DataFrame
-    city_code_df = pd.read_excel('Reference/City_Code.xlsx')
+    city_code_df = pd.read_excel('/content/force/Reference/City_Code.xlsx')
 
     #----------------------
     # City Code Lookup
@@ -88,12 +89,12 @@ def hpdbCheck(raw_file_path):
     hpdb_filled_df['ADDRESS'] = hpdb_filled_df[['PREFIX_ADDRESS', 'STREET_NAME', 'HOUSE_NUMBER', 'BLOCK', 'FLOOR', 'RT', 'RW']].apply(lambda x: ' '.join(x.astype(str)), axis=1)
 
     # Save the filled DataFrame to a new Excel file
-    hpdb_filled_df.to_excel('Temp/temp.xlsx', index=False)
+    hpdb_filled_df.to_excel('/content/force/Temp/temp.xlsx', index=False)
 
     # Load HPDB SAMPEL.xlsx into a DataFrame
     hpdb_df = hpdb_filled_df
 
-    wb = load_workbook('Temp/temp.xlsx')
+    wb = load_workbook('/content/force/Temp/temp.xlsx')
     ws = wb.active
 
     #----------------------
@@ -109,7 +110,7 @@ def hpdbCheck(raw_file_path):
     # Define the lists of allowed values
     acquisition_class_values = ["HOME", "HOME - BIZ", "BIZ - HOME", "BIZ"]
     building_type_values = ['PERUMAHAN', 'RUKO', 'FASUM']
-    ownership_values = ['PARTNERSHIP-LN', 'PARTNERSHIP-IF', 'PARTNERSHIP-TBG', 'OWN BUILT']
+    ownership_values = ['PARTNERSHIP-LN', 'PARTNERSHIP-IF', 'PARTNER-TBG', 'OWN BUILT']
     vendor_name_values = ['LINKNET', 'IFORTE', 'TBG']
     prefix_address_values = ['JL.', 'GG.']
 
@@ -140,8 +141,8 @@ def hpdbCheck(raw_file_path):
     hpdb_df['RFS_DATE'] = pd.to_datetime(hpdb_df['RFS_DATE'], format='%m/%d/%Y', errors='coerce')
 
     # Convert string columns to lowercase
-    hpdb_df = hpdb_df.map(lambda x: x.lower() if isinstance(x, str) else x)
-    kodepos_df = kodepos_df.map(lambda x: str(x).lower() if isinstance(x, str) else x)
+    hpdb_df = hpdb_df.applymap(lambda x: x.lower() if isinstance(x, str) else x)
+    kodepos_df = kodepos_df.applymap(lambda x: str(x).lower() if isinstance(x, str) else x)
 
     #-------------------------
     # LONGITUDE and LATITUDE
@@ -184,7 +185,7 @@ def hpdbCheck(raw_file_path):
                 if not re.match(r'^(-|\d+)$', str(cell.value)):
                     for cell in row:
                         cell.fill = red_fill
-    
+
     #----------------------
     # Zip Code Checking
     #----------------------
@@ -291,6 +292,9 @@ def hpdbCheck(raw_file_path):
     #-------------
     # HOMEPASS_ID
     #-------------
+    # Convert the "HOMEPASS_ID" column to string
+    hpdb_df["HOMEPASS_ID"] = hpdb_df["HOMEPASS_ID"].astype(str)
+    
     # Get the duplicated rows in the "HOMEPASS_ID" column
     duplicates = hpdb_df["HOMEPASS_ID"].duplicated()
 
@@ -382,19 +386,20 @@ def main():
 
     print("FORCE is Running...")
 
-    entries = os.listdir('Input')
     # Filter out only directories
-    clusters = [entry for entry in entries if os.path.isdir(os.path.join('Input', entry))]
+    clusters = os.listdir('/content/force/Input')
+    clusters.remove(".gitkeep")
+    clusters = [cluster for cluster in clusters if cluster.startswith("HPDB") and cluster.endswith(".xlsx") ]
 
     for cluster in clusters:
-        input_dir = f"Input\{cluster}"
-        summary_dir = f"Summary\{cluster}"
-        kmz_file_path = os.path.join(input_dir, f"ABD - {cluster}.kmz")
-        hpdb_file_path = os.path.join(input_dir, f"HPDB - {cluster}.xlsx")
-        summary_file_path = os.path.join(summary_dir, f"Summary_{cluster}.xlsx")
+        input_dir = '/content/force/Input/'
+        summary_dir = '/content/force/Summary/'
+        # kmz_file_path = os.path.join(input_dir, f"ABD - {cluster}.kmz")
+        hpdb_file_path = os.path.join(input_dir, cluster)
+        # summary_file_path = os.path.join(summary_dir, f"Summary_{cluster}")
 
         # Membuat direktori jika belum ada
-        os.makedirs(summary_dir, exist_ok=True)
+        # os.makedirs(summary_dir, exist_ok=True)
 
         print(hpdb_file_path)
 
@@ -430,14 +435,14 @@ def main():
         summary_df = pd.concat([log_columns_df, hdpb_df], axis=1, ignore_index=False)
 
         # Create temp_master.xlsx with headers from master_temp_df if it doesn't exist
-        if not os.path.exists(summary_file_path):
-            summary_df.to_excel(summary_file_path, index=False, engine='openpyxl')
-        
-        else:
-            with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
-                # fix line
-                reader = pd.read_excel(summary_file_path, sheet_name="Sheet1")
-                summary_df.to_excel(writer, sheet_name="Sheet1", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
+        # if not os.path.exists(summary_file_path):
+        #     summary_df.to_excel(summary_file_path, index=False, engine='openpyxl')
+
+        # else:
+        #     with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
+        #         # fix line
+        #         reader = pd.read_excel(summary_file_path, sheet_name="Sheet1")
+        #         summary_df.to_excel(writer, sheet_name="Sheet1", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
 
 if __name__ == "__main__":
     main()
