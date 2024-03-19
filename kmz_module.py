@@ -123,6 +123,24 @@ def check_pole_to_hp(placemark_dict, pole_df):
       if lowest_distance > 35:
         pole_to_hp_35m.append("{} {} : {}".format(name, hp["Name"], ((hp["Coordinates"][0], hp["Coordinates"][1]))))   
     return pole_to_hp_35m
+  
+def getAllHP(file_path):
+    placemark_dict = get_placemark(file_path)
+    fat_df = to_df(placemark_dict["FAT"], parse_simple=False)    
+    hp_folder_name = get_homepass_folder(placemark_dict)
+    all_homepass_df = pd.DataFrame()  # DataFrame kosong untuk menyimpan semua data
+
+    for name in hp_folder_name:
+        homepass_df = to_df(placemark_dict[name], parse_simple=True)
+        all_homepass_df = pd.concat([all_homepass_df, homepass_df], ignore_index=True)  # Gabungkan DataFrame ke DataFrame besar
+
+    return all_homepass_df
+
+def getAllFAT(file_path):
+    placemark_dict = get_placemark(file_path)
+    fat_df = to_df(placemark_dict["FAT"], parse_simple=False)    
+
+    return fat_df
 
 def check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df):
   fat_to_hp_150m = []

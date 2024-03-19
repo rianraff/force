@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 import random
 import pandas as pd
-from validator_module import hpdbCheck
+from hpdb_module import hpdbCheck
 from kmz_module import kmzCheck
 import threading
 import time
@@ -14,7 +14,7 @@ def main():
 
     print("FORCE is Running...")
 
-    clusters = os.listdir('Input')
+    clusters = [cluster for cluster in os.listdir('Input') if os.path.isdir(os.path.join('Input', cluster))]
 
     for cluster in clusters:
         input_dir = f"Input\{cluster}"
@@ -30,44 +30,22 @@ def main():
 
         start_time = time.time()
 
-        # hdpb_df = hpdbCheck(hpdb_file_path)
+        hpdbCheck(hpdb_file_path, kmz_file_path, cluster)
         # kmz_df = kmzCheck(kmz_file_path)
 
         # Jalankan kedua fungsi secara paralel
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future1 = executor.submit(hpdbCheck, hpdb_file_path)
-            future2 = executor.submit(kmzCheck, kmz_file_path)
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     future1 = executor.submit(hpdbCheck, hpdb_file_path, kmz_file_path)
+        #     future2 = executor.submit(kmzCheck, kmz_file_path)
 
-            # Ambil hasil kembali dari kedua fungsi
-            hdpb_df = future1.result()
-            kmz_df = future2.result()
+        #     # Ambil hasil kembali dari kedua fungsi
+        #     hdpb_df = future1.result()
+        #     kmz_df = future2.result()
 
         end_time = time.time()
 
         execution_time = end_time - start_time
         print("Execution time:", execution_time, "seconds")
-
-        # Get current date
-        checking_date = datetime.today().strftime('%Y-%m-%d')
-
-        # Get current time
-        checking_time = datetime.now().strftime('%H:%M:%S')
-
-        # Create a DataFrame with the log_columns and the new row
-        log_columns_df = pd.DataFrame(columns=log_columns)
-        log_columns_df.loc[0] = [cluster, checking_date, checking_time]
-
-        summary_df = pd.concat([log_columns_df, kmz_df, hdpb_df], axis=1, ignore_index=False)
-
-        # Create temp_master.xlsx with headers from master_temp_df if it doesn't exist
-        if not os.path.exists(summary_file_path):
-            summary_df.to_excel(summary_file_path, index=False, engine='openpyxl')
-        
-        else:
-            with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
-                # fix line
-                reader = pd.read_excel(summary_file_path, sheet_name="Sheet1")
-                summary_df.to_excel(writer, sheet_name="Sheet1", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
 
 if __name__ == "__main__":
     main()
