@@ -1,7 +1,7 @@
 import requests
 import json
 
-def getToken():
+def getToken(username, password):
     url = 'https://www.getapprove.xl.co.id/api/v2/oauth/token'
     headers = {
         'Authorization': 'Basic YW11bmF3YXJAeGwuY28uaWQ6VW50b2VLRjByYzNzIw==',
@@ -11,8 +11,8 @@ def getToken():
 
     data = {
         'grant_type': 'password',
-        'username': 'amunawar@xl.co.id',
-        'password': 'UntoeKF0rc3s#'
+        'username': username,
+        'password': password
     }
 
     # Make a POST request to the API endpoint with data and headers
