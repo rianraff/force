@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 def getToken(username, password):
     url = 'https://www.getapprove.xl.co.id/api/v2/oauth/token'
@@ -48,47 +49,64 @@ def getRequestApproval(token, startCreatedDate, endCreatedDate):
     }
 
     response = requests.get(url, params=params, headers=headers)
-    id_dict = {}
     if response.status_code == 200:
         json_response = json.loads(response.text)
         contents = json_response["data"]["content"]
         for content in contents:
-            id_dict[content["description"]] = content["id"]
+            os.makedirs(os.path.join(os.getcwd(), content["description"]))
+            getDetailRequest(token, content["id"], content["description"])
+            
     else:
         print(f"Request failed with status code: {response.status_code}")
         print(f"Request failed with status code: {response.text}")
 
-    return id_dict
+    
 
-def getDetailRequest(token, id_dict):
-    document_dict = {}
-    for cluster_id, id in id_dict.items():
-        url = f'https://www.getapprove.xl.co.id/api/v2/bpmn/requestDocument/{id}'
+def getDetailRequest(token, id, cluster_id):
+    url = f'https://www.getapprove.xl.co.id/api/v2/bpmn/requestDocument/{id}'
 
-        headers = {
-            'User-ID': 'idsta.harynr@xl.co.id',
-            'Authorization': token,
-            'Cookie': '__cf_bm=hPi1UnexJtcsbaxvM8plQ6MAa0Hy99GzwXYCtHbrRTQ-1710737810-1.0.1.1-RFUOs6hQmeTyhbffEKf3IlWqBCabsL1I6jrqIrIXRyotr4Z17FvkaPUblHmwYf4HxOpjnIbn0zfmF3RhVrf.dA'
-        }
-        response = requests.get(url, headers=headers)
+    headers = {
+        'User-ID': 'idsta.harynr@xl.co.id',
+        'Authorization': token,
+        'Cookie': '__cf_bm=hPi1UnexJtcsbaxvM8plQ6MAa0Hy99GzwXYCtHbrRTQ-1710737810-1.0.1.1-RFUOs6hQmeTyhbffEKf3IlWqBCabsL1I6jrqIrIXRyotr4Z17FvkaPUblHmwYf4HxOpjnIbn0zfmF3RhVrf.dA'
+    }
+    response = requests.get(url, headers=headers)
 
-        if response.status_code == 200:
-            json_response = json.loads(response.text)
-            contents = json_response["data"]["object"]["fileDocuments"]
-            details_dict = {}
-            for content in contents:
-                details_dict[content["name"]] = content["minioId"]
-            document_dict[cluster_id] = details_dict
-        else:
-            print(f"Request failed with status code: {response.status_code}")
-            print(f"Request failed with status code: {response.text}")
-    return document_dict
+    if response.status_code == 200:
+        json_response = json.loads(response.text)
+        contents = json_response["data"]["object"]["fileDocuments"]
+        for content in contents:
+            downloadReqApproval(token, cluster_id, content["name"], content["minioId"])
+    else:
+        print(f"Request failed with status code: {response.status_code}")
+        print(f"Request failed with status code: {response.text}")
+
+def downloadReqApproval(token, cluster_id, file_name, minioId):
+    url = f'https://www.getapprove.xl.co.id/api/v2/bpmn/requestDocument/download-file?minioId={minioId}'
+  # Replace with the URL of the file you want to download
+    filename = os.path.join(cluster_id, file_name)  # Specify the filename for the downloaded file
+    headers = {
+        'User-ID': 'idsta.harynr@xl.co.id',
+        'Authorization': token,
+    }
+    file_path = os.getcwd()
+    # Send a GET request to the URL
+    response = requests.get(url, headers=headers)
+
+    # Check if the request was successful (status code 200)
+    if response.status_code == 200:
+        # Open the file in binary write mode
+        with open(os.path.join(file_path,filename), 'wb') as f:
+            # Write the content of the response to the file
+            f.write(response.content)
+        print(f"File '{filename}' downloaded successfully.")
+    else:
+        print(f"Failed to download file. Status code: {response.status_code}")
 
 def main():
     token = getToken("amunawar@xl.co.id", "UntoeKF0rc3s#")
-    id_dict = getRequestApproval(token, "14-03-2024", "14-03-2024")
-    print(getDetailRequest(token, id_dict))
-
+    getRequestApproval(token, "14-03-2024", "14-03-2024")
+    
 
 if __name__ == "__main__":
     main()
