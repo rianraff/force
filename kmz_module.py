@@ -109,6 +109,7 @@ def mapping_hp_to_pole(hp_df, pole_df):
 def check_pole_to_hp(placemark_dict, pole_df):
   hp_folder_name = get_homepass_folder(placemark_dict)
   pole_to_hp_35m = []
+  pole_to_hp_35m_coords = []
   for name in hp_folder_name:
     homepass_df = to_df(placemark_dict[name], parse_simple=True)
     geod = Geod(ellps="WGS84")
@@ -121,8 +122,9 @@ def check_pole_to_hp(placemark_dict, pole_df):
         distance_list.append(geod.geometry_length(line))
       lowest_distance = min(distance_list)
       if lowest_distance > 35:
-        pole_to_hp_35m.append("{} {} : {}".format(name, hp["Name"], ((hp["Coordinates"][0], hp["Coordinates"][1]))))   
-    return pole_to_hp_35m
+        pole_to_hp_35m.append("{} {}".format(name, hp["Name"]))
+        pole_to_hp_35m_coords.append(str((hp["Coordinates"][0], hp["Coordinates"][1])))   
+    return pole_to_hp_35m, pole_to_hp_35m_coords
   
 def getAllHP(file_path):
     placemark_dict = get_placemark(file_path)
@@ -144,9 +146,12 @@ def getAllFAT(file_path):
 
 def check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df):
   fat_to_hp_150m = []
+  fat_to_hp_coords = []
   hp_folder_name = get_homepass_folder(placemark_dict)
+  has_sling = False
   try:
-    sling_df = to_df(placemark_dict["SLING"], parse_simple=False, mapping=True)
+    sling_df = to_df(placemark_dict["SLINGWIRE"], parse_simple=False, mapping=True)
+    has_sling = True
   except:
     has_sling = False
   for name in hp_folder_name:
@@ -164,7 +169,8 @@ def check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df):
     for _, hp in hp_df.iterrows():
       fat = fat_df[fat_df["Name"] == hp["FAT_CODE"]]
       if len(fat) == 0:
-        fat_to_hp_150m["there is no fat {} in kmz file".format(hp["FAT_CODE"])] = hp["Coordinates"]
+        fat_to_hp_150m.append("there is no fat {} in kmz file".format(hp["FAT_CODE"]))
+        fat_to_hp_coords.append(hp["Coordinates"])
         continue
       pole_coordinates = pole_df["Coordinates"].iloc[hp["Pole_index"]]
       hp_point = Point(hp["Coordinates"][0], hp["Coordinates"][1])
@@ -205,11 +211,13 @@ def check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df):
         distance_case2 = dropwire_length + pole_to_fat_air_length
         if distance_case2 <= 150:
           count_case3 += 1
-          fat_to_hp_150m.append("{} {} : {}".format(name, hp["Name"], ((hp["Coordinates"][0], hp["Coordinates"][1]))))
+          fat_to_hp_150m.append("{} {} is > 150m and but in airhead < 150m".format(name, hp["Name"]))
+          fat_to_hp_coords.append(str((hp["Coordinates"][0], hp["Coordinates"][1])))
         elif distance_case2 > 150:
           count_case4 += 1
-          fat_to_hp_150m.append("{} {} : {}".format(name, hp["Name"], ((hp["Coordinates"][0], hp["Coordinates"][1]))))
-  return fat_to_hp_150m
+          fat_to_hp_150m.append("{} {} is > 150m".format(name, hp["Name"]))
+          fat_to_hp_coords.append(str((hp["Coordinates"][0], hp["Coordinates"][1])))
+  return fat_to_hp_150m, fat_to_hp_coords
 
 def is_fat_contain_pole(df_pole, df_fat):
   fat_pole = {}
@@ -309,7 +317,31 @@ def check_cable_distribution_has_sling(df_cable, df_pole, df_sling):
   filtered_df = pole_not_in_distribution_df[pole_not_in_distribution_df['Name'].isin(pole_not_in_sling)]
   return filtered_df
 
-def kmzCheck(file_path):   
+def kmzCheck(file_path, cluster, checking_date, checking_time):   
+    hpdb_col = [
+    'ACQUISITION_CLASS',
+    'ACQUISTION_TIER',
+    'BUILDING_TYPE',
+    'OWNERSHIP',
+    'VENDOR_NAME',
+    'ZIP_CODE',
+    'REGION',
+    'CITY',
+    'CITY_CODE',
+    'DISTRICT',
+    'SUB_DISTRICT',
+    'FAT_CODE',
+    'FAT_LONGITUDE',
+    'FAT_LATITUDE',
+    'BUILDING_LATITUDE',
+    'BUILDING_LONGITUDE',
+    'HOMEPASS_ID',
+    'MOBILE_REGION',
+    'MOBILE_CLUSTER',
+    'CITY_GROUP']
+    kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m']
+    log_col = ['Cluster ID', 'Checking Date', 'Checking Time', "Status"]
+
     placemark_dict = get_placemark(file_path)
     try:
       pole_df = to_df(placemark_dict["POLE"], parse_simple=False)
@@ -332,44 +364,157 @@ def kmzCheck(file_path):
     except:
       print("no folder SLINGWIRE")
 
-    pole_to_hp = check_pole_to_hp(placemark_dict, pole_df)
-    fat_to_hp = check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df)      
+    pole_to_hp, pole_to_hp_coords = check_pole_to_hp(placemark_dict, pole_df)
+    fat_to_hp, fat_to_hp_coords = check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df)      
     fat_to_pole = is_fat_contain_pole(pole_df, fat_df)
     fdt_to_pole = is_fdt_contain_pole(pole_df, fdt_df)
 
-    gilang_col = ["Result", 
-    'Pole to FAT', 'Pole to FDT',
-    'HP to pole 35m', 'HP to FAT 150m',]
 
     # Create a DataFrame with column names from column_names
-    gilang_df = pd.DataFrame(columns=gilang_col)
-    results = 0
-    if len(pole_to_hp) == 0:
-      pole_to_hp = "OK"
-      results += 1
-    if len(fat_to_hp) == 0:
-      fat_to_hp = "OK"
-      results += 1
+    kmz_df = pd.DataFrame(columns=log_col + kmz_col + hpdb_col)
+  
     if len(fat_to_pole) == 0:
-      fat_to_pole = "OK"
-      results += 1
-    if len(fdt_to_pole) == 0:
-      fdt_to_pole = "OK"
-      results += 1
-
-    if results == 4:
-      results = "OK"
+      row_temp = {}
+      row_temp["Cluster ID"] = cluster
+      row_temp["Checking Date"] = checking_date
+      row_temp["Checking Time"] = checking_time
+      row_temp["Status"] = "Revise"
+      for col_name in kmz_col:
+        if col_name == "Pole to FAT":
+          row_temp[col_name] = "OK"
+        else:
+          row_temp[col_name] = "-"
+      for col_name in hpdb_col:
+        row_temp[col_name] = "-"
+      new_row_df = pd.DataFrame([row_temp])
+      kmz_df = kmz_df._append(new_row_df, ignore_index=True)
     else:
-      results = "REVISE"
-
-    var_list = [results ,fat_to_pole, fdt_to_pole, pole_to_hp, fat_to_hp]
+      for i in fat_to_pole:
+        row_temp = {}
+        row_temp["Cluster ID"] = cluster
+        row_temp["Checking Date"] = checking_date
+        row_temp["Checking Time"] = checking_time
+        row_temp["Status"] = "Revise"
+        for col_name in kmz_col:
+          if col_name == "Pole to FAT":
+            row_temp[col_name] = i
+          else:
+            row_temp[col_name] = "-"
+        for col_name in hpdb_col:
+          row_temp[col_name] = "-"
+        new_row_df = pd.DataFrame([row_temp])
+        kmz_df = kmz_df._append(new_row_df, ignore_index=True)
+        
     
+    if len(fdt_to_pole) == 0:
+      row_temp = {}
+      row_temp["Cluster ID"] = cluster
+      row_temp["Checking Date"] = checking_date
+      row_temp["Checking Time"] = checking_time
+      row_temp["Status"] = "Revise"
+      for col_name in kmz_col:
+        if col_name == "Pole to FDT":
+          row_temp[col_name] = "OK"
+        else:
+          row_temp[col_name] = "-"
+      for col_name in hpdb_col:
+        row_temp[col_name] = "-"
+      new_row_df = pd.DataFrame([row_temp])
+      kmz_df = kmz_df._append(new_row_df, ignore_index=True)
+    else:
+      for i in fdt_to_pole:
+        row_temp = {}
+        row_temp["Cluster ID"] = cluster
+        row_temp["Checking Date"] = checking_date
+        row_temp["Checking Time"] = checking_time
+        row_temp["Status"] = "Revise"
+        for col_name in kmz_col:
+          if col_name == "Pole to FDT":
+            row_temp[col_name] = i
+          else:
+            row_temp[col_name] = "-"
+        for col_name in hpdb_col:
+          row_temp[col_name] = "-"
+        new_row_df = pd.DataFrame([row_temp])
+        kmz_df = kmz_df._append(new_row_df, ignore_index=True)
 
-    new_row = {}
-    for col_name, var in zip(gilang_col, var_list):
-      new_row[col_name] = str(var)
+    if len(pole_to_hp) == 0:
+      row_temp = {}
+      row_temp["Cluster ID"] = cluster
+      row_temp["Checking Date"] = checking_date
+      row_temp["Checking Time"] = checking_time
+      row_temp["Status"] = "Revise"
+      for col_name in kmz_col:
+        if col_name == "HP to pole 35m" or col_name == 'Coordinate HP to pole 35m':
+          row_temp[col_name] = "OK"
+        else:
+          row_temp[col_name] = "-"
+      for col_name in hpdb_col:
+        row_temp[col_name] = "-"
+      new_row_df = pd.DataFrame([row_temp])
+      kmz_df = kmz_df._append(new_row_df, ignore_index=True)
+    else:
+      for i, j in zip(pole_to_hp, pole_to_hp_coords):
+        row_temp = {}
+        row_temp["Cluster ID"] = cluster
+        row_temp["Checking Date"] = checking_date
+        row_temp["Checking Time"] = checking_time
+        row_temp["Status"] = "Revise"
+        for col_name in kmz_col:
+          if col_name == "HP to pole 35m":
+            row_temp[col_name] = i
+          elif col_name == 'Coordinate HP to pole 35m':
+            row_temp[col_name] = j
+          else:
+            row_temp[col_name] = "-"
+        for col_name in hpdb_col:
+          row_temp[col_name] = "-"
+        new_row_df = pd.DataFrame([row_temp])
+        kmz_df = kmz_df._append(new_row_df, ignore_index=True)
 
-    # Append the new row to the DataFrame
-    gilang_df = gilang_df._append(new_row, ignore_index=True)
+    if len(fat_to_hp) == 0:
+      row_temp = {}
+      row_temp["Cluster ID"] = cluster
+      row_temp["Checking Date"] = checking_date
+      row_temp["Checking Time"] = checking_time
+      row_temp["Status"] = "Revise"
+      for col_name in kmz_col:
+        if col_name == "HP to FAT 150m" or col_name == 'Coordinate HP to FAT 150m':
+          row_temp[col_name] = "OK"
+        else:
+          row_temp[col_name] = "-"
+      for col_name in hpdb_col:
+        row_temp[col_name] = "-"
+      new_row_df = pd.DataFrame([row_temp])
+      kmz_df = kmz_df._append(new_row_df, ignore_index=True)
+    else:
+      for i, j in zip(fat_to_hp, fat_to_hp_coords):
+        row_temp = {}
+        row_temp["Cluster ID"] = cluster
+        row_temp["Checking Date"] = checking_date
+        row_temp["Checking Time"] = checking_time
+        row_temp["Status"] = "Revise"
+        for col_name in kmz_col:
+          if col_name == "HP to FAT 150m":
+            row_temp[col_name] = i
+          elif col_name == 'Coordinate HP to FAT 150m':
+            row_temp[col_name] = j
+          else:
+            row_temp[col_name] = "-"
+        for col_name in hpdb_col:
+          row_temp[col_name] = "-"
+        new_row_df = pd.DataFrame([row_temp])
+        kmz_df = kmz_df._append(new_row_df, ignore_index=True)  
 
-    return pd.DataFrame(gilang_df)
+    summary_dir = f"Summary\{cluster}"
+    summary_file_path = os.path.join(summary_dir, f"Summary_{cluster}.xlsx")
+    if not os.path.exists(summary_file_path):
+        kmz_df.to_excel(summary_file_path, index=False, engine='openpyxl')
+    
+    else:
+        with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
+            # fix line
+            reader = pd.read_excel(summary_file_path, sheet_name="Sheet1")
+            kmz_df.to_excel(writer, sheet_name="Sheet1", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
+
+    print("Done")
