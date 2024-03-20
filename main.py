@@ -36,7 +36,7 @@ def main():
         checking_time = datetime.now().strftime('%H:%M:%S')
 
         hpdbCheck(hpdb_file_path, kmz_file_path, cluster, checking_date, checking_time)
-        # kmz_df = kmzCheck(kmz_file_path)
+        kmzCheck(kmz_file_path, cluster, checking_date, checking_time)
 
         # Jalankan kedua fungsi secara paralel
         # with concurrent.futures.ThreadPoolExecutor() as executor:

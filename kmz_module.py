@@ -294,7 +294,7 @@ def check_distribution_cable_connect_to_pole(df_cable, df_pole):
   filtered_df = df_pole[df_pole['Name'].isin(cable_not_in_distribution)]
   return filtered_df
 
-def check_cable_distribution_has_sling(df_cable, df_pole, df_sling):
+def check_pole_has_sling(df_cable, df_pole, df_sling):
   pole_not_in_distribution_df = check_distribution_cable_connect_to_pole(df_cable, df_pole)
   no_intersection_count = {}
   for _, pole in pole_not_in_distribution_df.iterrows():
@@ -315,7 +315,12 @@ def check_cable_distribution_has_sling(df_cable, df_pole, df_sling):
     if count == len(df_sling):
       pole_not_in_sling.append(name)
   filtered_df = pole_not_in_distribution_df[pole_not_in_distribution_df['Name'].isin(pole_not_in_sling)]
-  return filtered_df
+  pole_has_no_cable = []
+  pole_has_no_cable_coords = []
+  for index, row in filtered_df.iterrows():
+    pole_has_no_cable.append(row["Name"])
+    pole_has_no_cable_coords.append(str(row["Coordinates"]))
+  return pole_has_no_cable, pole_has_no_cable_coords
 
 def kmzCheck(file_path, cluster, checking_date, checking_time):   
     hpdb_col = [
@@ -339,10 +344,14 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
     'MOBILE_REGION',
     'MOBILE_CLUSTER',
     'CITY_GROUP']
-    kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m']
+    kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m',
+               "Pole not in Distribution and Sling", "Coordinate Pole not in Distribution and Sling"]
     log_col = ['Cluster ID', 'Checking Date', 'Checking Time', "Status"]
 
     placemark_dict = get_placemark(file_path)
+
+    has_sling = False
+
     try:
       pole_df = to_df(placemark_dict["POLE"], parse_simple=False)
     except:
@@ -361,6 +370,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       print("no folder CABLE DISTRIBUTION")
     try:
       sling_df = to_df(placemark_dict["SLINGWIRE"], parse_simple=False, mapping=True)
+      has_sling = True
     except:
       print("no folder SLINGWIRE")
 
@@ -368,6 +378,11 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
     fat_to_hp, fat_to_hp_coords = check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df)      
     fat_to_pole = is_fat_contain_pole(pole_df, fat_df)
     fdt_to_pole = is_fdt_contain_pole(pole_df, fdt_df)
+    if has_sling:
+      pole_has_no_cable, pole_has_no_cable_coords = check_pole_has_sling(cable_df, pole_df, sling_df)
+    else:
+      pole_has_no_cable = []
+      pole_has_no_cable_coords = []
 
 
     # Create a DataFrame with column names from column_names
@@ -504,10 +519,43 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         for col_name in hpdb_col:
           row_temp[col_name] = "-"
         new_row_df = pd.DataFrame([row_temp])
-        kmz_df = kmz_df._append(new_row_df, ignore_index=True)  
+        kmz_df = kmz_df._append(new_row_df, ignore_index=True)
 
-    summary_dir = f"Summary\{cluster}"
-    summary_file_path = os.path.join(summary_dir, f"Summary_{cluster}.xlsx")
+    if len(pole_has_no_cable) == 0:
+      row_temp = {}
+      row_temp["Cluster ID"] = cluster
+      row_temp["Checking Date"] = checking_date
+      row_temp["Checking Time"] = checking_time
+      row_temp["Status"] = "Revise"
+      for col_name in kmz_col:
+        if col_name == "Pole not in Distribution and Sling" or col_name == 'Coordinate Pole not in Distribution and Sling':
+          row_temp[col_name] = "OK"
+        else:
+          row_temp[col_name] = "-"
+      for col_name in hpdb_col:
+        row_temp[col_name] = "-"
+      new_row_df = pd.DataFrame([row_temp])
+      kmz_df = kmz_df._append(new_row_df, ignore_index=True)
+    else:
+      for i, j in zip(pole_has_no_cable, pole_has_no_cable_coords):
+        row_temp = {}
+        row_temp["Cluster ID"] = cluster
+        row_temp["Checking Date"] = checking_date
+        row_temp["Checking Time"] = checking_time
+        row_temp["Status"] = "Revise"
+        for col_name in kmz_col:
+          if col_name == "Pole not in Distribution and Sling":
+            row_temp[col_name] = i
+          elif col_name == 'Coordinate Pole not in Distribution and Sling':
+            row_temp[col_name] = j
+          else:
+            row_temp[col_name] = "-"
+        for col_name in hpdb_col:
+          row_temp[col_name] = "-"
+        new_row_df = pd.DataFrame([row_temp])
+        kmz_df = kmz_df._append(new_row_df, ignore_index=True)
+
+    summary_file_path = "Summary\Checking Summary.xlsx"
     if not os.path.exists(summary_file_path):
         kmz_df.to_excel(summary_file_path, index=False, engine='openpyxl')
     
