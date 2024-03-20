@@ -122,7 +122,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster):
     # Define the lists of similar columns
     coordinate_col = ['FDT_LONGITUDE', 'FAT_LONGITUDE', 'BUILDING_LONGITUDE', 'FDT_LATITUDE', 'FAT_LATITUDE', 'BUILDING_LATITUDE']
     rt_rw_col = ['RT','RW']
-    kmz_col = ['Result', 'Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m']
+    kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m']
     log_col = ['Cluster ID', 'Checking date', 'Checking Time']
 
     # Convert the allowed values to lowercase
