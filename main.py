@@ -21,7 +21,6 @@ def main():
         summary_dir = f"Summary\{cluster}"
         kmz_file_path = os.path.join(input_dir, f"ABD - {cluster}.kmz")
         hpdb_file_path = os.path.join(input_dir, f"HPDB - {cluster}.xlsx")
-        summary_file_path = os.path.join(summary_dir, f"Summary_{cluster}.xlsx")
 
         # Membuat direktori jika belum ada
         os.makedirs(summary_dir, exist_ok=True)
@@ -30,7 +29,13 @@ def main():
 
         start_time = time.time()
 
-        hpdbCheck(hpdb_file_path, kmz_file_path, cluster)
+        # Get current date
+        checking_date = datetime.today().strftime('%Y-%m-%d')
+
+        # Get current time
+        checking_time = datetime.now().strftime('%H:%M:%S')
+
+        hpdbCheck(hpdb_file_path, kmz_file_path, cluster, checking_date, checking_time)
         # kmz_df = kmzCheck(kmz_file_path)
 
         # Jalankan kedua fungsi secara paralel

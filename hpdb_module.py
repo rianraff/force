@@ -12,7 +12,7 @@ import shutil
 from kmz_module import getAllHP, getAllFAT
 
 # Process each file
-def hpdbCheck(raw_file_path, kmz_file_path, cluster):
+def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_time):
     print(kmz_file_path)
     start_time = time.time()
     file = os.path.basename(raw_file_path)
@@ -21,8 +21,8 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster):
 
     # Define the directory paths
     output_dir = 'Output'
-    summary_dir = f"Summary\{cluster}"
-    summary_file_path = os.path.join(summary_dir, f"Summary_{cluster}.xlsx")
+    summary_dir = f"Summary"
+    summary_file_path = os.path.join(summary_dir, f"Checking Summary.xlsx")
 
     # Construct the full file paths
     output_file_path = os.path.join(output_dir, f"output_{file}")
@@ -136,6 +136,8 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster):
     longitude_pattern = r'^\d{1,3}\.\d{6}$'
     latitude_pattern = r'^-?\d{1,2}\.\d{6}$'
 
+    # List to store row indices
+    rows_to_delete = []
     red_columns = []
 
     #----------------------
@@ -370,49 +372,56 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster):
     wb = load_workbook(output_file_path)
     ws = wb.active
 
-    # Get the names of the columns from the first row
-    hpdb_col = [cell.value for cell in ws[1]]
+    # Iterate over each row starting from the second row
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+        # Check if any cell in the row has red fill
+        has_red_fill = any([cell.fill == red_fill for cell in row])
 
-    # Iterate through each column
-    for col_idx, col in enumerate(ws.iter_cols(), start=1):
-        red_found = False
-        # Check if any cell in the column has the red_fill pattern fill
-        for cell in col:
-            if cell.fill == red_fill:  # Check for red_fill pattern fill
-                red_columns.append(hpdb_col[col_idx - 1])  # Append the column name
-                red_found = True
-                break
-            # if red_found:
-            #     break  # No need to continue checking other cells in the column if one is already red
+        # If no red fill, add row index to rows_to_delete list
+        if not has_red_fill:
+            rows_to_delete.append(row[0].row)
+
+    # Delete rows in reverse order to avoid shifting rows
+    for row_idx in sorted(rows_to_delete, reverse=True):
+        ws.delete_rows(row_idx)
+
+    # Iterate over each cell in the worksheet
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+        for cell in row:
+            # Skip certain columns
+            if ws.cell(row=1, column=cell.column).value in ['FAT_CODE', 'FAT_LONGITUDE', 'FAT_LATITUDE', 'BUILDING_LATITUDE', 'BUILDING_LONGITUDE', 'HOMEPASS_ID']:
+                continue
+
+            # Check if cell has red fill
+            if cell.fill == red_fill:
+                cell.value = 'REVISE'
+            else:
+                cell.value = 'OK'
+
+    wb.save('Temp/HPDB Summary.xlsx')
 
     # Create a DataFrame with column names from column_names
-    hpdb_summary_df = pd.DataFrame(columns=hpdb_col)
+    hpdb_summary_df = pd.read_excel('Temp/HPDB Summary.xlsx')
+    kmz_summary_df = pd.DataFrame(columns=kmz_col)
 
-    # Create a new row
-    new_hpdb_row = {}
-    for col_name in hpdb_col:
-        if col_name in red_columns:
-            new_hpdb_row[col_name] = "Revise"
-        else:
-            new_hpdb_row[col_name] = "OK"
-            
-    for col_name in kmz_col:
-        new_hpdb_row[col_name] = "-"
+    hpdb_summary_num_rows = hpdb_summary_df.shape[0]
 
-    # Append the new row to the DataFrame
-    hpdb_summary_df = hpdb_summary_df._append(new_hpdb_row, ignore_index=True)
+    # Create a new row with "-" values
+    new_row = pd.DataFrame([["-"] * len(kmz_summary_df.columns)], columns=kmz_summary_df.columns)
 
-    # Get current date
-    checking_date = datetime.today().strftime('%Y-%m-%d')
-
-    # Get current time
-    checking_time = datetime.now().strftime('%H:%M:%S')
+    # Append the new row to kmz_df num_rows times
+    for _ in range(hpdb_summary_num_rows):
+        kmz_summary_df = kmz_summary_df._append(new_row, ignore_index=True)
 
     # Create a DataFrame with the log_columns and the new row
-    log_columns_df = pd.DataFrame(columns=log_col)
-    log_columns_df.loc[0] = [cluster, checking_date, checking_time]
+    log_summary_df = pd.DataFrame(columns=log_col)
+    log_summary_df.loc[0] = [cluster, checking_date, checking_time]
 
-    summary_df = pd.concat([log_columns_df, hpdb_summary_df], axis=1, ignore_index=False)
+    # Repeat appending the new row to log_summary_df for hpdb_summary_num_rows times
+    for _ in range(hpdb_summary_num_rows - 1):
+        log_summary_df = log_summary_df._append(log_summary_df.iloc[0], ignore_index=True)
+
+    summary_df = pd.concat([log_summary_df, kmz_summary_df, hpdb_summary_df], axis=1, ignore_index=False)
 
     # Create temp_master.xlsx with headers from master_temp_df if it doesn't exist
     if not os.path.exists(summary_file_path):
@@ -424,6 +433,9 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster):
             reader = pd.read_excel(summary_file_path, sheet_name="Sheet1")
             summary_df.to_excel(writer, sheet_name="Sheet1", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
 
+    #-------------
+    # FInishing
+    #-------------
     # Remove the raw file
     # os.remove(raw_file_path)
             
