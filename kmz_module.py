@@ -325,7 +325,7 @@ def check_pole_has_sling(df_cable, df_pole, df_sling):
 def kmzCheck(file_path, cluster, checking_date, checking_time):   
     hpdb_col = [
     'ACQUISITION_CLASS',
-    'ACQUISTION_TIER',
+    'ACQUISITION_TIER',
     'BUILDING_TYPE',
     'OWNERSHIP',
     'VENDOR_NAME',
@@ -345,7 +345,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
     'MOBILE_CLUSTER',
     'CITY_GROUP']
     kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m',
-               "Pole not in Distribution and Sling", "Coordinate Pole not in Distribution and Sling"]
+              "Pole not in Distribution and Sling", "Coordinate Pole not in Distribution and Sling"]
     log_col = ['Cluster ID', 'Checking Date', 'Checking Time', "Status"]
 
     placemark_dict = get_placemark(file_path)
@@ -393,7 +393,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "Revise"
+      row_temp["Status"] = "REVISE"
       for col_name in kmz_col:
         if col_name == "Pole to FAT":
           row_temp[col_name] = "OK"
@@ -409,7 +409,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         row_temp["Cluster ID"] = cluster
         row_temp["Checking Date"] = checking_date
         row_temp["Checking Time"] = checking_time
-        row_temp["Status"] = "Revise"
+        row_temp["Status"] = "REVISE"
         for col_name in kmz_col:
           if col_name == "Pole to FAT":
             row_temp[col_name] = i
@@ -426,7 +426,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "Revise"
+      row_temp["Status"] = "REVISE"
       for col_name in kmz_col:
         if col_name == "Pole to FDT":
           row_temp[col_name] = "OK"
@@ -442,7 +442,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         row_temp["Cluster ID"] = cluster
         row_temp["Checking Date"] = checking_date
         row_temp["Checking Time"] = checking_time
-        row_temp["Status"] = "Revise"
+        row_temp["Status"] = "REVISE"
         for col_name in kmz_col:
           if col_name == "Pole to FDT":
             row_temp[col_name] = i
@@ -458,7 +458,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "Revise"
+      row_temp["Status"] = "REVISE"
       for col_name in kmz_col:
         if col_name == "HP to pole 35m" or col_name == 'Coordinate HP to pole 35m':
           row_temp[col_name] = "OK"
@@ -474,7 +474,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         row_temp["Cluster ID"] = cluster
         row_temp["Checking Date"] = checking_date
         row_temp["Checking Time"] = checking_time
-        row_temp["Status"] = "Revise"
+        row_temp["Status"] = "REVISE"
         for col_name in kmz_col:
           if col_name == "HP to pole 35m":
             row_temp[col_name] = i
@@ -492,7 +492,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "Revise"
+      row_temp["Status"] = "REVISE"
       for col_name in kmz_col:
         if col_name == "HP to FAT 150m" or col_name == 'Coordinate HP to FAT 150m':
           row_temp[col_name] = "OK"
@@ -508,7 +508,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         row_temp["Cluster ID"] = cluster
         row_temp["Checking Date"] = checking_date
         row_temp["Checking Time"] = checking_time
-        row_temp["Status"] = "Revise"
+        row_temp["Status"] = "REVISE"
         for col_name in kmz_col:
           if col_name == "HP to FAT 150m":
             row_temp[col_name] = i
@@ -526,7 +526,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "Revise"
+      row_temp["Status"] = "REVISE"
       for col_name in kmz_col:
         if col_name == "Pole not in Distribution and Sling" or col_name == 'Coordinate Pole not in Distribution and Sling':
           row_temp[col_name] = "OK"
@@ -542,7 +542,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         row_temp["Cluster ID"] = cluster
         row_temp["Checking Date"] = checking_date
         row_temp["Checking Time"] = checking_time
-        row_temp["Status"] = "Revise"
+        row_temp["Status"] = "REVISE"
         for col_name in kmz_col:
           if col_name == "Pole not in Distribution and Sling":
             row_temp[col_name] = i
