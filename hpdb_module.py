@@ -38,7 +38,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     print(raw_file_path)
 
     # Load the file into a pandas DataFrame
-    hpdb_df = pd.read_excel(raw_file_path, sheet_name='HPDB_Excel')
+    hpdb_df = pd.read_excel(raw_file_path,dtype={"HOMEPASS_ID" : str, "RT" : str, "RW" : str}, sheet_name='HPDB_Excel')
 
     # Load City_Code.xlsx into a DataFrame
     city_code_df = pd.read_excel('Reference/City_Code.xlsx')
@@ -122,8 +122,31 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     # Define the lists of similar columns
     coordinate_col = ['FDT_LONGITUDE', 'FAT_LONGITUDE', 'BUILDING_LONGITUDE', 'FDT_LATITUDE', 'FAT_LATITUDE', 'BUILDING_LATITUDE']
     rt_rw_col = ['RT','RW']
-    kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m']
-    log_col = ['Cluster ID', 'Checking date', 'Checking Time']
+    kmz_col = ['Pole to FAT', 'Pole to FDT', 'HP to pole 35m', 'Coordinate HP to pole 35m', 'HP to FAT 150m', 'Coordinate HP to FAT 150m',
+                "Pole not in Distribution and Sling", "Coordinate Pole not in Distribution and Sling"]
+    log_col = ['Cluster ID', 'Checking date', 'Checking Time', "Status"]
+    columns_to_keep = [
+        'ACQUISITION_CLASS',
+        'ACQUISITION_TIER',
+        'BUILDING_TYPE',
+        'OWNERSHIP',
+        'VENDOR_NAME',
+        'ZIP_CODE',
+        'REGION',
+        'CITY',
+        'CITY_CODE',
+        'DISTRICT',
+        'SUB_DISTRICT',
+        'FAT_CODE',
+        'FAT_LONGITUDE',
+        'FAT_LATITUDE',
+        'BUILDING_LATITUDE',
+        'BUILDING_LONGITUDE',
+        'HOMEPASS_ID',
+        'MOBILE_REGION',
+        'MOBILE_CLUSTER',
+        'CITY_GROUP'
+    ]
 
     # Convert the allowed values to lowercase
     acquisition_class_values_lower = [value.lower() for value in acquisition_class_values]
@@ -192,7 +215,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     for col in rt_rw_col:
         for row in ws.iter_rows(min_row=2, max_row=len(hpdb_df) + 1, min_col=hpdb_df.columns.get_loc(col) + 1, max_col=hpdb_df.columns.get_loc(col) + 1):
             for cell in row:
-                if not re.match(r'^(-|\d+)$', str(cell.value)):
+                if cell.value == "-":
                     for cell in row:
                         cell.fill = red_fill
     
@@ -404,6 +427,10 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     hpdb_summary_df = pd.read_excel('Temp/HPDB Summary.xlsx')
     kmz_summary_df = pd.DataFrame(columns=kmz_col)
 
+    # Menghapus kolom yang tidak ada dalam list
+    columns_to_drop = set(hpdb_summary_df.columns) - set(columns_to_keep)
+    hpdb_summary_df.drop(columns=columns_to_drop, inplace=True)
+
     hpdb_summary_num_rows = hpdb_summary_df.shape[0]
 
     # Create a new row with "-" values
@@ -415,7 +442,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
 
     # Create a DataFrame with the log_columns and the new row
     log_summary_df = pd.DataFrame(columns=log_col)
-    log_summary_df.loc[0] = [cluster, checking_date, checking_time]
+    log_summary_df.loc[0] = [cluster, checking_date, checking_time, "REVISE"]
 
     # Repeat appending the new row to log_summary_df for hpdb_summary_num_rows times
     for _ in range(hpdb_summary_num_rows - 1):
