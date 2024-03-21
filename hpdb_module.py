@@ -38,7 +38,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     print(raw_file_path)
 
     # Load the file into a pandas DataFrame
-    hpdb_df = pd.read_excel(raw_file_path,dtype={"HOMEPASS_ID" : str}, sheet_name='HPDB_Excel')
+    hpdb_df = pd.read_excel(raw_file_path,dtype={"HOMEPASS_ID" : str, "RT" : str, "RW" : str}, sheet_name='HPDB_Excel')
 
     # Load City_Code.xlsx into a DataFrame
     city_code_df = pd.read_excel('Reference/City_Code.xlsx')
@@ -215,7 +215,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     for col in rt_rw_col:
         for row in ws.iter_rows(min_row=2, max_row=len(hpdb_df) + 1, min_col=hpdb_df.columns.get_loc(col) + 1, max_col=hpdb_df.columns.get_loc(col) + 1):
             for cell in row:
-                if not re.match(r'^(-|\d+)$', str(cell.value)):
+                if cell.value == "-":
                     for cell in row:
                         cell.fill = red_fill
     
