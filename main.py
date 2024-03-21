@@ -35,7 +35,7 @@ def main():
         # Get current time
         checking_time = datetime.now().strftime('%H:%M:%S')
 
-        hpdbCheck(hpdb_file_path, kmz_file_path, cluster, checking_date, checking_time)
+        #hpdbCheck(hpdb_file_path, kmz_file_path, cluster, checking_date, checking_time)
         kmzCheck(kmz_file_path, cluster, checking_date, checking_time)
 
         # Jalankan kedua fungsi secara paralel
