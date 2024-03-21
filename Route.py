@@ -1,6 +1,14 @@
 import requests
 import json
 import os
+import psycopg2
+from dotenv import load_dotenv
+from flask import Flask, request, jsonify
+
+
+#----------------------
+# Get Approve API
+#----------------------
 
 def getToken(username, password):
     url = 'https://www.getapprove.xl.co.id/api/v2/oauth/token'
@@ -54,10 +62,19 @@ def getRequestApproval(token, startCreatedDate, endCreatedDate):
     if response.status_code == 200:
         json_response = json.loads(response.text)
         contents = json_response["data"]["content"]
+        net_contents = []
         for content in contents:
-            os.makedirs(os.path.join(base_dir, content["description"]))
+            net_contents.append(content["description"])
+        net_contents = list(set(net_contents))
+        for content in net_contents:
+            insert_data_to_db(conn, content, 'FALSE', '', 'FALSE')
+        for content in contents:
+            if os.path.exists(os.path.join(base_dir, content["description"])):
+                os.replace(os.path.join(base_dir, content["description"]), os.path.join(base_dir, content["description"]))
+            else:
+                os.makedirs(os.path.join(base_dir, content["description"]))
             getDetailRequest(token, content["id"], content["description"])
-            
+            update_path_in_db(conn, content["description"], os.path.join(base_dir, content["description"]))
     else:
         print(f"Request failed with status code: {response.status_code}")
         print(f"Request failed with status code: {response.text}")
@@ -105,10 +122,115 @@ def downloadReqApproval(token, cluster_id, file_name, minioId):
     else:
         print(f"Failed to download file. Status code: {response.status_code}")
 
+#----------------------
+# Force Database
+#----------------------
+    
+# Load environment variables from .env file
+load_dotenv()
+
+# Create a PostgreSQL connection
+conn = psycopg2.connect(
+    dbname=os.getenv("POSTGRES_DB"),
+    user=os.getenv("POSTGRES_USER"),
+    password=os.getenv("POSTGRES_PASSWORD"),
+    host=os.getenv("POSTGRES_HOST"),
+    port=os.getenv("POSTGRES_PORT")
+)
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Route to insert data into the database
+@app.route('/insert_data', methods=['POST'])
+def insert_data():
+    data = request.get_json()
+    cluster_id = data.get('cluster_id')
+    processed = data.get('processed')
+    file_path = data.get('file_path')
+    revise = data.get('revise')
+
+    if not cluster_id or not processed or not revise:
+        return jsonify({'message': 'Missing required parameters'}), 400
+
+    insert_data_to_db(conn, cluster_id, processed, file_path, revise)
+    return jsonify({'message': 'Data inserted successfully'}), 200
+
+def insert_data_to_db(conn, cluster_id, processed, file_path, revise):
+    # Create a new cursor
+    cur = conn.cursor()
+
+    # Execute the INSERT statement
+    cur.execute(
+        "INSERT INTO logging (cluster_id, processed, file_path, revise) VALUES (%s, %s, %s, %s)",
+        (cluster_id, processed, file_path, revise)
+    )
+
+    # Commit the changes to the database
+    conn.commit()
+
+    # Close the cursor
+    cur.close()
+
+# Route to get list of clusters
+@app.route('/clusters', methods=['GET'])
+def clusters():
+    return getClusterList()
+
+def getClusterList():
+    try:
+        # Create a new cursor
+        cur = conn.cursor()
+
+        # Execute a query to select all clusters from the logging table
+        cur.execute("SELECT DISTINCT cluster_id FROM logging")
+
+        # Fetch all rows from the result set
+        rows = cur.fetchall()
+
+        # Close the cursor
+        cur.close()
+
+        # Return the list of clusters as a JSON response
+        return jsonify({"clusters": [row[0] for row in rows]})
+
+    except psycopg2.Error as e:
+        # Handle any errors that occur during database operation
+        print(f"Error retrieving cluster list: {e}")
+        return jsonify({"error": "Failed to retrieve cluster list"}), 500
+    
+@app.route('/update_path', methods=['POST'])
+def update_path():
+    data = request.json
+    cluster_id = data.get('cluster_id')
+    file_path = data.get('new_path')
+
+    if not cluster_id or not file_path:
+        return jsonify({'error': 'Missing cluster_id or new_path parameter'}), 400
+
+    update_path_in_db(conn, cluster_id, file_path)
+
+def update_path_in_db(conn, cluster_id, file_path):
+    # Create a new cursor
+    cur = conn.cursor()
+
+    # Execute the UPDATE statement
+    cur.execute(
+        "UPDATE logging SET file_path = %s WHERE cluster_id = %s",
+        (file_path, cluster_id)
+    )
+
+    # Commit the changes to the database
+    conn.commit()
+
+    # Close the cursor
+    cur.close()
+    
 def main():
     token = getToken("amunawar@xl.co.id", "UntoeKF0rc3s#")
     getRequestApproval(token, "14-03-2024", "14-03-2024")
-    
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
+    # app.run(debug=True)
     main()
