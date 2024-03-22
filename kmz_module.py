@@ -351,21 +351,29 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
     placemark_dict = get_placemark(file_path)
 
     has_sling = False
+    has_pole = False
+    has_fat = False
+    has_fdt = False
+    has_cable = False
 
     try:
       pole_df = to_df(placemark_dict["POLE"], parse_simple=False)
+      has_pole = True
     except:
       print("no folder POLE")
     try:
       fat_df = to_df(placemark_dict["FAT"], parse_simple=False)
+      has_fat = True
     except:
       print("no folder FAT")
     try:
       fdt_df = to_df(placemark_dict["FDT"], parse_simple=False)
+      has_fdt = True
     except:
       print("no folder FDT")
     try:
       cable_df = to_df(placemark_dict["CABLE DISTRIBUTION"], parse_simple=False, mapping=True)
+      has_cable = True
     except:
       print("no folder CABLE DISTRIBUTION")
     try:
@@ -374,12 +382,34 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
     except:
       print("no folder SLINGWIRE")
 
-    pole_to_hp, pole_to_hp_coords = check_pole_to_hp(placemark_dict, pole_df)
-    fat_to_hp, fat_to_hp_coords = check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df)      
-    fat_to_pole = is_fat_contain_pole(pole_df, fat_df)
-    fdt_to_pole = is_fdt_contain_pole(pole_df, fdt_df)
+    if has_pole:
+      pole_to_hp, pole_to_hp_coords = check_pole_to_hp(placemark_dict, pole_df)
+    else:
+      pole_to_hp = ["No POLE folder in kmz"]
+      pole_to_hp_coords = ["-"]
+
+    if has_pole and has_fat and has_cable: 
+      fat_to_hp, fat_to_hp_coords = check_fat_to_hp(placemark_dict, pole_df, fat_df, cable_df)   
+    else:
+      fat_to_hp = ["No POLE or FAT or CABLE DISTRIBUTION folder in kmz"]
+      fat_to_hp_coords = ["-"]
+
+    if has_pole and has_fat: 
+      fat_to_pole = is_fat_contain_pole(pole_df, fat_df)
+    else:
+      fat_to_pole = ["No POLE or FAT folder in kmz"]
+
+    if has_pole and has_fdt:
+      fdt_to_pole = is_fdt_contain_pole(pole_df, fdt_df)
+    else:
+      fdt_to_pole = ["No FDT folder in kmz"]
+
     if has_sling:
-      pole_has_no_cable, pole_has_no_cable_coords = check_pole_has_sling(cable_df, pole_df, sling_df)
+      if has_cable and has_pole:
+        pole_has_no_cable, pole_has_no_cable_coords = check_pole_has_sling(cable_df, pole_df, sling_df)
+      else:
+        pole_has_no_cable = ["No POLE or CABLE DISTRIBUTION folder in kmz"]
+        pole_has_no_cable_coords = ["-"]
     else:
       pole_has_no_cable = []
       pole_has_no_cable_coords = []
@@ -393,7 +423,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "REVISE"
+      row_temp["Status"] = "OK"
       for col_name in kmz_col:
         if col_name == "Pole to FAT":
           row_temp[col_name] = "OK"
@@ -426,7 +456,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "REVISE"
+      row_temp["Status"] = "OK"
       for col_name in kmz_col:
         if col_name == "Pole to FDT":
           row_temp[col_name] = "OK"
@@ -458,7 +488,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "REVISE"
+      row_temp["Status"] = "OK"
       for col_name in kmz_col:
         if col_name == "HP to pole 35m" or col_name == 'Coordinate HP to pole 35m':
           row_temp[col_name] = "OK"
@@ -492,7 +522,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "REVISE"
+      row_temp["Status"] = "OK"
       for col_name in kmz_col:
         if col_name == "HP to FAT 150m" or col_name == 'Coordinate HP to FAT 150m':
           row_temp[col_name] = "OK"
@@ -526,7 +556,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
       row_temp["Cluster ID"] = cluster
       row_temp["Checking Date"] = checking_date
       row_temp["Checking Time"] = checking_time
-      row_temp["Status"] = "REVISE"
+      row_temp["Status"] = "OK"
       for col_name in kmz_col:
         if col_name == "Pole not in Distribution and Sling" or col_name == 'Coordinate Pole not in Distribution and Sling':
           row_temp[col_name] = "OK"
