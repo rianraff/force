@@ -127,8 +127,7 @@ def check_pole_to_hp(placemark_dict, pole_df):
     return pole_to_hp_35m, pole_to_hp_35m_coords
   
 def getAllHP(file_path):
-    placemark_dict = get_placemark(file_path)
-    fat_df = to_df(placemark_dict["FAT"], parse_simple=False)    
+    placemark_dict = get_placemark(file_path)  
     hp_folder_name = get_homepass_folder(placemark_dict)
     all_homepass_df = pd.DataFrame()  # DataFrame kosong untuk menyimpan semua data
 

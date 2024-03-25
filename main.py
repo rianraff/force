@@ -1,56 +1,100 @@
 # Define the directory paths
 from datetime import datetime
+import json
 import os
-import random
 import pandas as pd
 from hpdb_module import hpdbCheck
 from kmz_module import kmzCheck
-import threading
 import time
-import concurrent.futures
+import requests
+import fnmatch
+from colorama import Fore, Style
+text = '''
+ __________  ____  ____________   
+/ ____/ __ \/ __ \/ ____/ ____/   
+/ /_  / / / / /_/ / /   / __/      
+/ __/ / /_/ / _, _/ /___/ /___      
+/_/    \____/_/ |_|\____/_____/      
+'''
 
 def main():
-    log_columns = ['Cluster ID', 'Checking date', 'Checking Time']
+    print(Fore.BLUE + text + Style.RESET_ALL)
+    print("FORCE is Running...\n")
+    standby = False
+    force_base_url = 'http://localhost:5000'
 
-    print("FORCE is Running...")
+    # Pola pencocokan nama file
+    hpdb_pattern = '*RPA*.xlsx'
+    kmz_pattern = '*ABD*.kmz'
 
-    clusters = [cluster for cluster in os.listdir('Input') if os.path.isdir(os.path.join('Input', cluster))]
+    while True:
+        url = f'{force_base_url}/get_path_cluster_id'
+        response = requests.get(url)
 
-    for cluster in clusters:
-        input_dir = f"Input\{cluster}"
-        summary_dir = f"Summary\{cluster}"
-        kmz_file_path = os.path.join(input_dir, f"ABD - {cluster}.kmz")
-        hpdb_file_path = os.path.join(input_dir, f"HPDB - {cluster}.xlsx")
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('file_path') == None:  # Cek jika data kosong
+                if standby:
+                    time.sleep(60)  # Jika data kosong, tunggu 60 detik sebelum cek lagi
+                    continue
+                print('No Documents to Check. Stand by')
+                standby = True
+            else:
+                standby = False
+                file_path = data.get('file_path')
+                cluster_id = data.get('cluster_id')
+                print(f'File Path: {file_path}, Cluster ID: {cluster_id}')
+        else:
+            print('Failed to get data. Status code:', response.status_code)
+        
+        if not standby:
 
-        # Membuat direktori jika belum ada
-        os.makedirs(summary_dir, exist_ok=True)
+            input_dir = file_path
+            files = os.listdir(input_dir)
 
-        print(hpdb_file_path)
+            # Iterasi semua file dalam direktori
+            for file in files:
+                if fnmatch.fnmatch(file, hpdb_pattern):
+                    hpdb_file_path = os.path.join(input_dir, file)
+                if fnmatch.fnmatch(file, kmz_pattern):
+                    kmz_file_path = os.path.join(input_dir, file)
 
-        start_time = time.time()
+            summary_dir = f"Summary\{cluster_id}"
 
-        # Get current date
-        checking_date = datetime.today().strftime('%Y-%m-%d')
+            # Membuat direktori jika belum ada
+            os.makedirs(summary_dir, exist_ok=True)
 
-        # Get current time
-        checking_time = datetime.now().strftime('%H:%M:%S')
+            print(hpdb_file_path)
 
-        hpdbCheck(hpdb_file_path, kmz_file_path, cluster, checking_date, checking_time)
-        kmzCheck(kmz_file_path, cluster, checking_date, checking_time)
+            start_time = time.time()
 
-        # Jalankan kedua fungsi secara paralel
-        # with concurrent.futures.ThreadPoolExecutor() as executor:
-        #     future1 = executor.submit(hpdbCheck, hpdb_file_path, kmz_file_path)
-        #     future2 = executor.submit(kmzCheck, kmz_file_path)
+            # Get current date
+            checking_date = datetime.today().strftime('%Y-%m-%d')
 
-        #     # Ambil hasil kembali dari kedua fungsi
-        #     hdpb_df = future1.result()
-        #     kmz_df = future2.result()
+            # Get current time
+            checking_time = datetime.now().strftime('%H:%M:%S')
 
-        end_time = time.time()
+            hpdbCheck(hpdb_file_path, kmz_file_path, cluster_id, checking_date, checking_time)
+            # kmzCheck(kmz_file_path, cluster_id, checking_date, checking_time)
 
-        execution_time = end_time - start_time
-        print("Execution time:", execution_time, "seconds")
+            url = f'{force_base_url}/update_processed'
+
+            data = {
+                'cluster_id': cluster_id
+            }
+            headers = {'Content-Type': 'application/json'}
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+
+            if response.status_code == 200:
+                print('Data inserted successfully.')
+            else:
+                print('Failed to insert data. Status code:', response.status_code)
+
+            end_time = time.time()
+
+            execution_time = end_time - start_time
+            print("Execution time:", execution_time, "seconds")
+            time.sleep(5)
 
 if __name__ == "__main__":
     main()
