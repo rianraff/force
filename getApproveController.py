@@ -79,7 +79,7 @@ def getRequestApproval(token, startCreatedDate, endCreatedDate):
             print('Failed to get cluster IDs. Status code:', response.status_code)
             
         for content in net_contents:
-            if content in cluster_ids:
+            if content not in cluster_ids:
                 # force insert api
                 url = f"{force_base_url}/insert_data"
                 data = {
