@@ -347,7 +347,10 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
               "Pole not in Distribution and Sling", "Coordinate Pole not in Distribution and Sling"]
     log_col = ['Cluster ID', 'Checking Date', 'Checking Time', "Status"]
 
-    placemark_dict = get_placemark(file_path)
+    try:
+      placemark_dict = get_placemark(file_path)
+    except:
+      return False
 
     has_sling = False
     has_pole = False

@@ -75,7 +75,7 @@ def main():
             checking_time = datetime.now().strftime('%H:%M:%S')
 
             hpdbCheck(hpdb_file_path, kmz_file_path, cluster_id, checking_date, checking_time)
-            # kmzCheck(kmz_file_path, cluster_id, checking_date, checking_time)
+            kmzCheck(kmz_file_path, cluster_id, checking_date, checking_time)
 
             url = f'{force_base_url}/update_processed'
 
