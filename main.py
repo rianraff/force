@@ -24,7 +24,8 @@ def main():
     force_base_url = 'http://localhost:5000'
 
     # Pola pencocokan nama file
-    hpdb_pattern = '*RPA*.xlsx'
+    hpdb_pattern_rpa = '*RPA*.xlsx'
+    hpdb_pattern_hpdb = '*HPDB*.xlsx'
     kmz_pattern = '*ABD*.kmz'
 
     while True:
@@ -54,7 +55,7 @@ def main():
 
             # Iterasi semua file dalam direktori
             for file in files:
-                if fnmatch.fnmatch(file, hpdb_pattern):
+                if fnmatch.fnmatch(file, hpdb_pattern_hpdb) or fnmatch.fnmatch(file, hpdb_pattern_rpa):
                     hpdb_file_path = os.path.join(input_dir, file)
                 if fnmatch.fnmatch(file, kmz_pattern):
                     kmz_file_path = os.path.join(input_dir, file)
