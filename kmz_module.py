@@ -321,6 +321,12 @@ def check_pole_has_sling(df_cable, df_pole, df_sling):
     pole_has_no_cable_coords.append(str(row["Coordinates"]))
   return pole_has_no_cable, pole_has_no_cable_coords
 
+def check_row_has_value(df, column_name, desired_value):
+    for index, row in df.iterrows():
+        if row[column_name] != desired_value:
+            return False
+    return True
+
 def kmzCheck(file_path, cluster, checking_date, checking_time):   
     hpdb_col = [
     'ACQUISITION_CLASS',
@@ -347,10 +353,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
               "Pole not in Distribution and Sling", "Coordinate Pole not in Distribution and Sling"]
     log_col = ['Cluster ID', 'Checking Date', 'Checking Time', "Status"]
 
-    try:
-      placemark_dict = get_placemark(file_path)
-    except:
-      return False
+    placemark_dict = get_placemark(file_path)
 
     has_sling = False
     has_pole = False
@@ -587,6 +590,8 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
         new_row_df = pd.DataFrame([row_temp])
         kmz_df = kmz_df._append(new_row_df, ignore_index=True)
 
+    condition = check_row_has_value(kmz_df, "Status", "REVISE")
+
     summary_file_path = "Summary\Checking Summary.xlsx"
     if not os.path.exists(summary_file_path):
         kmz_df.to_excel(summary_file_path, index=False, engine='openpyxl')
@@ -598,3 +603,5 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
             kmz_df.to_excel(writer, sheet_name="Sheet1", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
 
     print("Done")
+
+    return condition
