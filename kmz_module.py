@@ -323,9 +323,9 @@ def check_pole_has_sling(df_cable, df_pole, df_sling):
 
 def check_row_has_value(df, column_name, desired_value):
     for index, row in df.iterrows():
-        if row[column_name] != desired_value:
-            return False
-    return True
+        if row[column_name] == desired_value:
+            return True
+    return False
 
 def kmzCheck(file_path, cluster, checking_date, checking_time):   
     hpdb_col = [

@@ -112,6 +112,8 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     red_fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
     white_fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
 
+    isRevise = False
+
     # Get the current year
     current_year = datetime.now().year
 
@@ -426,6 +428,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
             # Check if cell has red fill
             if cell.fill == red_fill:
                 cell.value = 'REVISE'
+                isRevise = True
             else:
                 cell.value = 'OK'
 
@@ -479,3 +482,5 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     print(execution_time)
 
     print("Done")
+
+    return isRevise

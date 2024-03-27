@@ -75,13 +75,50 @@ def main():
             # Get current time
             checking_time = datetime.now().strftime('%H:%M:%S')
 
-            hpdbCheck(hpdb_file_path, kmz_file_path, cluster_id, checking_date, checking_time)
-            kmz_check = kmzCheck(kmz_file_path, cluster_id, checking_date, checking_time)
+            summary_file_path = os.path.join(summary_dir, f"Checking Summary.xlsx")
+            try:
+                hpdb_check = hpdbCheck(hpdb_file_path, kmz_file_path, cluster_id, checking_date, checking_time)
+            except:
+                df_error = pd.DataFrame({"Cluster ID": cluster_id, "Error":"HPDB file error"})
+                with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
+            # fix line
+                    reader = pd.read_excel(summary_file_path, sheet_name="Invalid Files")
+                    df_error.to_excel(writer, sheet_name="Invalid Files", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
+
+            try:        
+                kmz_check = kmzCheck(kmz_file_path, cluster_id, checking_date, checking_time)
+            except:
+                df_error = pd.DataFrame({"Cluster ID": cluster_id, "Error":"KMZ file error"})
+                with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
+            # fix line
+                    reader = pd.read_excel(summary_file_path, sheet_name="Invalid Files")
+                    df_error.to_excel(writer, sheet_name="Invalid Files", index=False, engine='openpyxl', header=False, startrow=len(reader)+1)
 
             url = f'{force_base_url}/update_processed'
 
             data = {
                 'cluster_id': cluster_id
+            }
+            headers = {'Content-Type': 'application/json'}
+            response = requests.post(url, headers=headers, data=json.dumps(data))
+
+            if response.status_code == 200:
+                print('Data inserted successfully.')
+            else:
+                print('Failed to insert data. Status code:', response.status_code)
+
+            # Check if HPDB or KMZ file need to be revised
+            if hpdb_check or kmz_check:
+                revise = True
+            else:
+                revise = False
+
+            # force update revise
+            url = f'{force_base_url}/update_revise'
+
+            data = {
+                'cluster_id': cluster_id,
+                'revise': revise
             }
             headers = {'Content-Type': 'application/json'}
             response = requests.post(url, headers=headers, data=json.dumps(data))

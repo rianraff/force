@@ -165,6 +165,33 @@ def update_processed_in_db(conn, cluster_id):
     # Close the cursor
     cur.close()
 
+@app.route('/update_revise', methods=['PUT'])
+def update_revise():
+    data = request.json
+    cluster_id = data.get('cluster_id')
+    revise = data.get('revise')
+
+    if not cluster_id:
+        return jsonify({'error': 'Missing cluster_id parameter'}), 400
+
+    update_revise_in_db(conn, cluster_id, revise)
+    return jsonify({'message': 'Processed updated successfully'}), 200
+
+def update_revise_in_db(conn, cluster_id, revise):
+    # Create a new cursor
+    cur = conn.cursor()
+
+    # Execute the UPDATE statement
+    cur.execute(
+        "UPDATE logging SET revise = %s WHERE cluster_id = %s", (revise, cluster_id,)
+    )
+
+    # Commit the changes to the database
+    conn.commit()
+
+    # Close the cursor
+    cur.close()
+
 #-----------------------------------
 # Route to get all cluster ids
 #-----------------------------------
