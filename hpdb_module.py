@@ -20,7 +20,7 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     start_time = time.time()
     file = os.path.basename(raw_file_path)
     homepass_long_lat = getAllHP(kmz_file_path)
-    # fat_long_lat = getAllFAT(kmz_file_path)
+    fat_long_lat = getAllFAT(kmz_file_path)
 
     # Define the directory paths
     output_dir = 'Output'
@@ -216,10 +216,10 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
             # Ubah nilai longitude dan latitude menjadi tuple
             coordinate_tuple = [float(fat_longitude), float(fat_latitude)]
 
-            # if not str(coordinate_tuple) in fat_long_lat["Coordinates"].astype(str).to_list():
-            #     # Tambahkan logika untuk menandai jika nilai tidak ditemukan
-            #     ws.cell(row=index + 2, column=hpdb_df.columns.get_loc('FAT_LONGITUDE') + 1).fill = red_fill
-            #     ws.cell(row=index + 2, column=hpdb_df.columns.get_loc('FAT_LATITUDE') + 1).fill = red_fill
+            if not str(coordinate_tuple) in fat_long_lat["Coordinates"].astype(str).to_list():
+                # Tambahkan logika untuk menandai jika nilai tidak ditemukan
+                ws.cell(row=index + 2, column=hpdb_df.columns.get_loc('FAT_LONGITUDE') + 1).fill = red_fill
+                ws.cell(row=index + 2, column=hpdb_df.columns.get_loc('FAT_LATITUDE') + 1).fill = red_fill
 
     # Fill all existing rows with red color for RT and RW columns
     for col in rt_rw_col:
@@ -475,7 +475,8 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     # FInishing
     #-------------
     # Remove the raw file
-    # os.remove(raw_file_path)
+    directory_path = os.path.dirname(raw_file_path)
+    shutil.rmtree(directory_path)
     
     end_time = time.time()
     execution_time = end_time - start_time

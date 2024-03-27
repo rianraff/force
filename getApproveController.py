@@ -164,8 +164,11 @@ def downloadReqApproval(token, cluster_id, file_name, minioId):
 
 def main():
     token = getToken("amunawar@xl.co.id", "UntoeKF0rc3s#")
-    today_time = datetime.date.today().strftime('%d-%m-%Y')
-    getRequestApproval(token, today_time, today_time)
+    today = datetime.date.today()
+    today_time = today.strftime('%d-%m-%Y')
+    yesterday = today - datetime.timedelta(days=1)
+    yesterday_time = yesterday.strftime('%d-%m-%Y')
+    getRequestApproval(token, yesterday_time, today_time)
 
 if __name__ == '__main__':
     # app.run(debug=True)

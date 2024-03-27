@@ -181,7 +181,7 @@ def update_revise_in_db(conn, cluster_id, revise):
     # Create a new cursor
     cur = conn.cursor()
 
-    # Execute the UPDATE statement
+    # Execute the UPDATE stateme\nt
     cur.execute(
         "UPDATE logging SET revise = %s WHERE cluster_id = %s", (revise, cluster_id,)
     )

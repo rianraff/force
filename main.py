@@ -2,6 +2,7 @@
 from datetime import datetime
 import json
 import os
+import shutil
 import pandas as pd
 from hpdb_module import hpdbCheck
 from kmz_module import kmzCheck
@@ -128,6 +129,8 @@ def main():
             else:
                 print('Failed to insert data. Status code:', response.status_code)
 
+            shutil.rmtree(file_path)
+            
             end_time = time.time()
 
             execution_time = end_time - start_time
