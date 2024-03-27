@@ -133,7 +133,7 @@ def get_path_cluster_id():
 def get_data_from_db():
     cur = conn.cursor()
     cur.execute(
-        "SELECT file_path, cluster_id FROM logging WHERE processed = 'FALSE' OR (processed = 'TRUE' AND revise = 'TRUE') ORDER BY id DESC LIMIT 1"
+        "SELECT file_path, cluster_id FROM logging WHERE (processed = 'FALSE' OR (processed = 'TRUE' AND revise = 'TRUE')) AND file_path != '' ORDER BY id DESC LIMIT 1"
     )
     row = cur.fetchone()
     cur.close()
