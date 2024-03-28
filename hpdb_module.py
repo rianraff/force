@@ -11,6 +11,27 @@ import os
 import shutil
 from kmz_module import getAllHP, getAllFAT
 
+def get_excel_sheet_names(filename):
+    try:
+        # Load the Excel workbook
+        workbook = load_workbook(filename)
+
+        # Get all sheet names
+        sheet_names = workbook.sheetnames
+
+        return sheet_names
+
+    except FileNotFoundError:
+        print("File not found.")
+        return None
+        
+def find_matching_strings(pattern, string_list):
+    matching_strings = []
+    for string in string_list:
+        if re.search(pattern, string, re.IGNORECASE):
+            matching_strings.append(string)
+    return matching_strings
+
 # Process each file
 def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_time):
     
@@ -39,9 +60,15 @@ def hpdbCheck(raw_file_path, kmz_file_path, cluster, checking_date, checking_tim
     mobile_df = pd.read_excel('Reference/Mobile_Region_Cluster.xlsx')
 
     print(raw_file_path)
-
+    
+    sheet_names = get_excel_sheet_names(raw_file_path)
+    
+    # Find matching strings
+    pattern = r"HPDB"
+    hpdb_sheet = find_matching_strings(pattern, sheet_names)
+    
     # Load the file into a pandas DataFrame
-    hpdb_df = pd.read_excel(raw_file_path,dtype={"HOMEPASS_ID" : str, "RT" : str, "RW" : str}, sheet_name='HPDB_Excel')
+    hpdb_df = pd.read_excel(raw_file_path,dtype={"HOMEPASS_ID" : str, "RT" : str, "RW" : str}, sheet_name=hpdb_sheet[0])
 
     # Load City_Code.xlsx into a DataFrame
     city_code_df = pd.read_excel('Reference/City_Code.xlsx')

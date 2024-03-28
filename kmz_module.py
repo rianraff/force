@@ -592,7 +592,7 @@ def kmzCheck(file_path, cluster, checking_date, checking_time):
 
     condition = check_row_has_value(kmz_df, "Status", "REVISE")
 
-    summary_file_path = "Summary\Checking Summary.xlsx"
+    summary_file_path = "Summary/Checking Summary.xlsx"
     if not os.path.exists(summary_file_path):
         kmz_df.to_excel(summary_file_path, index=False, engine='openpyxl')
     

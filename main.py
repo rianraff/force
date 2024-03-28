@@ -61,7 +61,7 @@ def main():
                 if fnmatch.fnmatch(file, kmz_pattern):
                     kmz_file_path = os.path.join(input_dir, file)
 
-            summary_dir = f"Summary\{cluster_id}"
+            summary_dir = f"Summary/{cluster_id}"
 
             # Membuat direktori jika belum ada
             os.makedirs(summary_dir, exist_ok=True)
@@ -76,11 +76,14 @@ def main():
             # Get current time
             checking_time = datetime.now().strftime('%H:%M:%S')
 
-            summary_file_path = os.path.join(summary_dir, f"Checking Summary.xlsx")
+            summary_file_path = os.path.join("Summary", f"Checking Summary.xlsx")
+            hpdb_check = None
+            kmz_check = None
+            
             try:
                 hpdb_check = hpdbCheck(hpdb_file_path, kmz_file_path, cluster_id, checking_date, checking_time)
             except:
-                df_error = pd.DataFrame({"Cluster ID": cluster_id, "Error":"HPDB file error"})
+                df_error = pd.DataFrame({"Cluster ID": [cluster_id], "Error":"HPDB file error"})
                 with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
             # fix line
                     reader = pd.read_excel(summary_file_path, sheet_name="Invalid Files")
@@ -89,7 +92,7 @@ def main():
             try:        
                 kmz_check = kmzCheck(kmz_file_path, cluster_id, checking_date, checking_time)
             except:
-                df_error = pd.DataFrame({"Cluster ID": cluster_id, "Error":"KMZ file error"})
+                df_error = pd.DataFrame({"Cluster ID": [cluster_id], "Error":"KMZ file error"})
                 with pd.ExcelWriter(summary_file_path, 'openpyxl', mode='a',  if_sheet_exists="overlay") as writer:
             # fix line
                     reader = pd.read_excel(summary_file_path, sheet_name="Invalid Files")
@@ -129,7 +132,7 @@ def main():
             else:
                 print('Failed to insert data. Status code:', response.status_code)
 
-            shutil.rmtree(file_path)
+            #shutil.rmtree(file_path)
             
             end_time = time.time()
 
